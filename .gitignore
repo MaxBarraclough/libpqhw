@@ -1,0 +1,82 @@
+# VS2015 garbage (or possibly OpenXL?)
+*.opendb
+
+# Vim temporary files
+*.swp
+MSG
+
+
+# Executables
+hellolibpq
+*.exe
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# Binary dumps from OpenCL
+*.clo
+
+
+# CMake garbage
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+Win32
+CPackConfig.cmake
+CPackSourceConfig.cmake
+
+
+
+# Pictures
+*.png
+*.jpg
+*.svg
+*.bmp
+*.gif
+
+# Pictures in Netpbm formats
+*.pnm
+*.pbm
+*.pgm
+
+# Garbage from Dolphin (KDE)
+*.directory
+# Garbage from Finder (OS X)
+*.DS_Store
+
+
+# Visual Studio garbage (from CMake and from VS itself)
+resource.h
+ipch
+*.user
+*.log
+*.aps
+*.rc
+*.suo
+*.swo
+*.vcxproj
+*.vcxproj.filters
+*.opensdf
+*.sdf
+*.sln
+RELOUT
+# data/
+*.stackdump
+*.dir
+x64
+x86
+Debug
+
