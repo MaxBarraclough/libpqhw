@@ -1,3 +1,12 @@
+// We expect to user username "testuser", password "testuser", database "my_database",
+// table "my_table" which should look like:
+//
+// CREATE TABLE "my_table" (
+  // "number" integer NOT NULL,
+  // "English" character varying(11) NOT NULL
+// );
+
+
 // required reading: https://www.postgresql.org/docs/current/static/libpq-exec.html and adjacent
 // see also
 // https://books.google.co.uk/books?id=gkQVL9pyFVYC&lpg=PA324&ots=E7xhWQIujW&dq=PQntuples&pg=PA324#v=onepage&q=PQntuples&f=false
@@ -36,7 +45,9 @@
 
 
 
-static const int expectedTypes[] = {INT4OID,VARCHAROID};
+// INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
+// VARCHAROID => our table uses "character varying(11)"
+static const int expectedTypes[] = { /*col. 0*/ INT4OID, /*col. 1*/ VARCHAROID };
 #define EXPECTED_NUM_COLS_VAL COUNT_OF(expectedTypes) // STRINGIFY_WITH_EXPANSION will give code, not a string of the number
 #define EXPECTED_NUM_COLS 2 // this way it plays nice with STRINGIFY_WITH_EXPANSION
 // so that in iostreams
@@ -51,18 +62,9 @@ BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == EXPECTED_NUM_COLS_VAL ));
 
 
 // returns true if checks passed, false if they failed
+// We check the types of columns 0 and 1.
+// Note that we index them in that way, and *not* by name (which would probably make far more sense, really)
 static bool checkColumnsTypes(PGresult * const result, int numCols) {
-
-// We expect to user username "testuser", password "testuser", database "my_database",
-// table "my_table" which should look like:
-//
-// CREATE TABLE "my_table" (
-  // "number" integer NOT NULL,
-  // "English" character varying(11) NOT NULL
-// );
-
-// INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
-// VARCHAROID => our table uses "character varying(11)"
 
   BOOST_ASSERT_MSG( (EXPECTED_NUM_COLS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
 
@@ -104,7 +106,7 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
     if ( EXPECTED_NUM_COLS == numCols ) {
       allOk = checkColumnsTypes(result,numCols);
     } else {
-      std::cerr << "Incorrect number of columns in table. Expected " EXPECTED_NUMBER_OF_COLUMNS_STR " but found " << numCols << '\n';
+      std::cerr << "Incorrect number of columns in table. Expected " EXPECTED_NUM_COLS_STR " but found " << numCols << '\n';
     }
 
   } else {
