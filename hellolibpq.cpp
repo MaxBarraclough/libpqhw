@@ -116,8 +116,6 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
 static void doStuffWithConnection(PGconn * const conn) {
    BOOST_ASSERT( NULL != conn );
 
-   std::cout << "Connection pointer obtained\n";
-
    PGresult * const result = PQexec(conn, "SELECT * FROM my_table;");
 
    if (NULL != result) {
@@ -169,59 +167,55 @@ int main(int argc, const char *argv[]) {
 
   PGconn * const conn = PQconnectdbParams(keywords,values,0);
 
+  BOOST_ASSERT_MSG( (NULL != conn), "Unexpected error attempting to initiate connection" );
 
-  if (NULL == conn) {
-    BOOST_ASSERT_MSG(false, "Unexpected error attempting to initiate connection");
-  } else {
+  const ConnStatusType status = PQstatus(conn);
 
-    const ConnStatusType status = PQstatus(conn);
+  switch(status) {
 
-    switch(status) {
+    case CONNECTION_OK:
+      doStuffWithConnection(conn);
+      break;
 
-      case CONNECTION_OK:
-        doStuffWithConnection(conn);
-        break;
-
-      case CONNECTION_BAD:
-        std::cerr << "Unable to connect. Reason: \n";
-        std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-'); // print 20 dashes http://stackoverflow.com/a/11421689/2307853
-        std::cerr << '\n';
-        std::cerr << PQerrorMessage(conn);
-        std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-');
-        std::cerr << "\n\n";
-        break;
+    case CONNECTION_BAD:
+      std::cerr << "Unable to connect. Reason: \n";
+      std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-'); // print 20 dashes http://stackoverflow.com/a/11421689/2307853
+      std::cerr << '\n';
+      std::cerr << PQerrorMessage(conn);
+      std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-');
+      std::cerr << "\n\n";
+      break;
 
 /* // These are for non-blocking operation only
-      case CONNECTION_STARTED:
-        BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting for connection to be made'" );
-        break;
+    case CONNECTION_STARTED:
+      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting for connection to be made'" );
+      break;
 
-      case CONNECTION_MADE:
-        BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting to send'" );
-        break;
+    case CONNECTION_MADE:
+      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting to send'" );
+      break;
 
-      case CONNECTION_AWAITING_RESPONSE:
-        BOOST_ASSERT_MSG( false, "Blocking connection function left us 'awaiting response'" );
-        break;
+    case CONNECTION_AWAITING_RESPONSE:
+      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'awaiting response'" );
+      break;
 
-      case CONNECTION_AUTH_OK:
-        BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting for backend start-up to finish'" );
-        break;
+    case CONNECTION_AUTH_OK:
+      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting for backend start-up to finish'" );
+      break;
 
-      case CONNECTION_SETENV:
-        BOOST_ASSERT_MSG( false, "Blocking connection function left us 'negotiating environment-driven parameter settings'" );
-        break;
+    case CONNECTION_SETENV:
+      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'negotiating environment-driven parameter settings'" );
+      break;
 
-      case CONNECTION_SSL_STARTUP:
-        BOOST_ASSERT_MSG( false, "Blocking connection function left us 'negotiating SSL encryption'" );
-        break;
+    case CONNECTION_SSL_STARTUP:
+      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'negotiating SSL encryption'" );
+      break;
 */
 
-      default:
-        BOOST_ASSERT_MSG( false, "Invalid connection status" );
-        break;
+    default:
+      BOOST_ASSERT_MSG( false, "Invalid connection status" );
+      break;
 
-    }
   }
 
   PQfinish(conn);
