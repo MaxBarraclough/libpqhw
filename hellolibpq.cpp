@@ -119,7 +119,7 @@ static void doStuffWithConnection(PGconn * const conn) {
    PGresult * const result = PQexec(conn, "SELECT * FROM my_table;");
 
    if (NULL != result) {
-     bool schemaIsOk = verifyTheSchema(conn, result);
+     const bool schemaIsOk = verifyTheSchema(conn, result);
 
      if (schemaIsOk) {
        std::cout << "All schema checks passed\n";
@@ -158,12 +158,12 @@ int main(int argc, const char *argv[]) {
   const char * const values[]   = { "libpqhw",     // application_name // TODO use CMake config.h name string
                                     "localhost",   // host
                                     "testuser",    // user
-                                    "testuser",    // password
+                                    "testuser",    // password (yes, hard-coded)
                                     "my_database", // dbname
                                     NULL };
 
 
-// BOOST_STATIC_ASSERT(( sizeof keywords == sizeof values )); // oddly Postgres won't do the equivalent check
+// BOOST_STATIC_ASSERT(( sizeof keywords == sizeof values )); // Postgres won't do the equivalent runtime check
 
   PGconn * const conn = PQconnectdbParams(keywords,values,0);
 
@@ -179,7 +179,7 @@ int main(int argc, const char *argv[]) {
 
     case CONNECTION_BAD:
       std::cerr << "Unable to connect. Reason: \n";
-      std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-'); // print 20 dashes http://stackoverflow.com/a/11421689/2307853
+      std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
       std::cerr << '\n';
       std::cerr << PQerrorMessage(conn);
       std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-');
