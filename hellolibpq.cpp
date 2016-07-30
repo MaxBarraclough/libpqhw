@@ -186,32 +186,6 @@ int main(int argc, const char *argv[]) {
       std::cerr << "\n\n";
       break;
 
-/* // These are for non-blocking operation only
-    case CONNECTION_STARTED:
-      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting for connection to be made'" );
-      break;
-
-    case CONNECTION_MADE:
-      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting to send'" );
-      break;
-
-    case CONNECTION_AWAITING_RESPONSE:
-      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'awaiting response'" );
-      break;
-
-    case CONNECTION_AUTH_OK:
-      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'waiting for backend start-up to finish'" );
-      break;
-
-    case CONNECTION_SETENV:
-      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'negotiating environment-driven parameter settings'" );
-      break;
-
-    case CONNECTION_SSL_STARTUP:
-      BOOST_ASSERT_MSG( false, "Blocking connection function left us 'negotiating SSL encryption'" );
-      break;
-*/
-
     default:
       BOOST_ASSERT_MSG( false, "Invalid connection status" );
       break;
