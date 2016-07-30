@@ -39,7 +39,12 @@
 static const int expectedTypes[] = {INT4OID,VARCHAROID};
 #define EXPECTED_NUMBER_OF_COLUMNS_VAL COUNT_OF(expectedTypes) // STRINGIFY_WITH_EXPANSION will give code, not a string of the number
 #define EXPECTED_NUMBER_OF_COLUMNS 2 // this way it plays nice with STRINGIFY_WITH_EXPANSION
+// so that in iostreams
+  // "string literal here " << EXPECTED_NUMBER_OF_COLUMNS << " another string literal"
+// is equivalent to
+  // "string literal here " STRINGIFY_WITH_EXPANSION(EXPECTED_NUMBER_OF_COLUMNS) " another string literal"
 BOOST_STATIC_ASSERT(( EXPECTED_NUMBER_OF_COLUMNS == EXPECTED_NUMBER_OF_COLUMNS_VAL ));
+
 
 
 // returns true if checks passed, false if they failed
@@ -58,49 +63,53 @@ static bool checkColumnsTypes(PGresult * const result, int numCols) {
 
   BOOST_ASSERT_MSG( (EXPECTED_NUMBER_OF_COLUMNS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
 
-  bool typesAreIncorrect = false; // leave as false until we find a bad type
+  bool typesAreCorrect = true; // leave as true until we find a bad type
 
-  for (int i = 0; i != COUNT_OF(expectedTypes); ++i) {
+  for (int i = 0; i != EXPECTED_NUMBER_OF_COLUMNS; ++i) {
 
     const Oid typeForCol = PQftype(result, i);
     if (expectedTypes[i] == typeForCol) {
       std::cout << "Correct type found for column " << i << '\n';
     } else {
-      typesAreIncorrect = true;
-      std::cerr << "Incorrect type for column 0: OID number of " << typeForCol << '\n';
+      typesAreCorrect = false;
+      std::cerr << "Incorrect type for column " << i << ": OID number of " << typeForCol << '\n';
     }
 
   }
 
-  return typesAreIncorrect;
+  return typesAreCorrect;
 }
 
 
 // 'schema' as in DB's structure, not as in Postgres namespace
-static void verifyTheSchema(PGconn * const conn, PGresult * const result) {
+static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
   BOOST_ASSERT( NULL != conn );
   BOOST_ASSERT( NULL != result );
 
   const int numCols = PQnfields(result);
 
-  if ( numCols == EXPECTED_NUMBER_OF_COLUMNS ) {
+  bool allOk  = false;
+
+  if ( EXPECTED_NUMBER_OF_COLUMNS == numCols ) {
+
     std::cout << "As expected, we have " STRINGIFY_WITH_EXPANSION(EXPECTED_NUMBER_OF_COLUMNS) " columns\n";
+
+    for (int i = 0; i != numCols; ++i) {
+      std::cout << "Column " << i << " is called '" << PQfname(result,i) << "'\n";
+    }
+
+
+    if ( EXPECTED_NUMBER_OF_COLUMNS == numCols ) {
+      allOk = checkColumnsTypes(result,numCols);
+    } else {
+      std::cerr << "Incorrect number of columns in table. Expected " STRINGIFY_WITH_EXPANSION(EXPECTED_NUMBER_OF_COLUMNS) " but found " << numCols << '\n';
+    }
+
   } else {
     std::cerr << "Unexpected number of columns: " << numCols << '\n';
   }
 
-  for (int i = 0; i != numCols; ++i) {
-    std::cout << "Column " << i << " is called '" << PQfname(result,i) << "'\n";
-  }
-
-
-  if ( COUNT_OF(expectedTypes) == numCols ) {
-    const bool columnTypesAreOk = checkColumnsTypes(result,numCols);
-  } else {
-    std::cerr << "Incorrect number of columns in table. Expected " << COUNT_OF(expectedTypes) << " but found " << numCols << '\n';
-  }
-
-
+  return allOk;
 }
 
 
@@ -112,7 +121,11 @@ static void doStuffWithConnection(PGconn * const conn) {
    PGresult * const result = PQexec(conn, "SELECT * FROM my_table;");
 
    if (NULL != result) {
-     verifyTheSchema(conn, result);
+     bool schemaIsOk = verifyTheSchema(conn, result);
+
+     if (schemaIsOk) {
+       std::cout << "All schema checks passed\n";
+     }
 
      PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
                       // It calls 'free' for us, see https://git.io/vKpNI
