@@ -37,13 +37,16 @@
 
 
 static const int expectedTypes[] = {INT4OID,VARCHAROID};
-#define EXPECTED_NUMBER_OF_COLUMNS_VAL COUNT_OF(expectedTypes) // STRINGIFY_WITH_EXPANSION will give code, not a string of the number
-#define EXPECTED_NUMBER_OF_COLUMNS 2 // this way it plays nice with STRINGIFY_WITH_EXPANSION
+#define EXPECTED_NUM_COLS_VAL COUNT_OF(expectedTypes) // STRINGIFY_WITH_EXPANSION will give code, not a string of the number
+#define EXPECTED_NUM_COLS 2 // this way it plays nice with STRINGIFY_WITH_EXPANSION
 // so that in iostreams
-  // "string literal here " << EXPECTED_NUMBER_OF_COLUMNS << " another string literal"
+  // "string literal here " << EXPECTED_NUM_COLS << " another string literal"
 // is equivalent to
-  // "string literal here " STRINGIFY_WITH_EXPANSION(EXPECTED_NUMBER_OF_COLUMNS) " another string literal"
-BOOST_STATIC_ASSERT(( EXPECTED_NUMBER_OF_COLUMNS == EXPECTED_NUMBER_OF_COLUMNS_VAL ));
+  // "string literal here " STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) " another string literal"
+
+#define EXPECTED_NUM_COLS_STR STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) // string literal, something like "2" (including the quotes)
+
+BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == EXPECTED_NUM_COLS_VAL ));
 
 
 
@@ -61,11 +64,11 @@ static bool checkColumnsTypes(PGresult * const result, int numCols) {
 // INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
 // VARCHAROID => our table uses "character varying(11)"
 
-  BOOST_ASSERT_MSG( (EXPECTED_NUMBER_OF_COLUMNS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
+  BOOST_ASSERT_MSG( (EXPECTED_NUM_COLS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
 
   bool typesAreCorrect = true; // leave as true until we find a bad type
 
-  for (int i = 0; i != EXPECTED_NUMBER_OF_COLUMNS; ++i) {
+  for (int i = 0; i != EXPECTED_NUM_COLS; ++i) {
 
     const Oid typeForCol = PQftype(result, i);
     if (expectedTypes[i] == typeForCol) {
@@ -90,19 +93,18 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
 
   bool allOk  = false;
 
-  if ( EXPECTED_NUMBER_OF_COLUMNS == numCols ) {
-
-    std::cout << "As expected, we have " STRINGIFY_WITH_EXPANSION(EXPECTED_NUMBER_OF_COLUMNS) " columns\n";
+  if ( EXPECTED_NUM_COLS == numCols ) {
+    std::cout << "As expected, we have " EXPECTED_NUM_COLS_STR " columns\n";
 
     for (int i = 0; i != numCols; ++i) {
       std::cout << "Column " << i << " is called '" << PQfname(result,i) << "'\n";
     }
 
 
-    if ( EXPECTED_NUMBER_OF_COLUMNS == numCols ) {
+    if ( EXPECTED_NUM_COLS == numCols ) {
       allOk = checkColumnsTypes(result,numCols);
     } else {
-      std::cerr << "Incorrect number of columns in table. Expected " STRINGIFY_WITH_EXPANSION(EXPECTED_NUMBER_OF_COLUMNS) " but found " << numCols << '\n';
+      std::cerr << "Incorrect number of columns in table. Expected " EXPECTED_NUMBER_OF_COLUMNS_STR " but found " << numCols << '\n';
     }
 
   } else {
