@@ -35,6 +35,8 @@
 #include <iostream>
 #include <iterator>  // for std::ostream_iterator
 
+#include <string.h>  // for strcmp
+
 // From Chromium via https://stackoverflow.com/a/4415646
 #define COUNT_OF(x) ( (sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))) )
 
@@ -63,7 +65,6 @@ BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == EXPECTED_NUM_COLS_VAL ));
 
 // returns true if checks passed, false if they failed
 // We check the types of columns 0 and 1.
-// Note that we index them in that way, and *not* by name (which would probably make far more sense, really)
 static bool checkColumnsTypes(PGresult * const result, int numCols) {
 
   BOOST_ASSERT_MSG( (EXPECTED_NUM_COLS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
@@ -85,6 +86,28 @@ static bool checkColumnsTypes(PGresult * const result, int numCols) {
   return typesAreCorrect;
 }
 
+// unlike checkColumnsTypes(2), this is fully hard-coded to our schema.
+// TODO FIX THAT by adding more globals arrays or maybe something nicer
+static bool checkColumnsNames(PGresult * const result) {
+
+  char * const colName1 = PQfname(result, 0);
+  BOOST_ASSERT_MSG( (NULL != colName1), "Unexpected too few columns: this should have been handled earlier" );
+
+  char * const colName2 = PQfname(result, 1);
+  BOOST_ASSERT_MSG( (NULL != colName2), "Unexpected too few columns: this should have been handled earlier" );
+
+  // we use strcmp, which presumably means we can only handle 'ordinary' ASCII names TODO what are Postgres's rules on this?
+  const bool column1NameCorrect = ( 0 == strcmp("number", colName1) );
+  const bool column2NameCorrect = ( 0 == strcmp("english",colName2) );
+  const bool bothColumnsNamesCorrect = (column1NameCorrect && column2NameCorrect);
+
+  if (bothColumnsNamesCorrect) {
+    std::cout << "Column names are correct\n";
+  }
+
+  return bothColumnsNamesCorrect;
+}
+
 
 // 'schema' as in DB's structure, not as in Postgres namespace
 static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
@@ -93,24 +116,13 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
 
   const int numCols = PQnfields(result);
 
-  bool allOk  = false;
+  bool allOk = false;
 
   if ( EXPECTED_NUM_COLS == numCols ) {
     std::cout << "As expected, we have " EXPECTED_NUM_COLS_STR " columns\n";
-
-    for (int i = 0; i != numCols; ++i) {
-      std::cout << "Column " << i << " is called '" << PQfname(result,i) << "'\n";
-    }
-
-
-    if ( EXPECTED_NUM_COLS == numCols ) {
-      allOk = checkColumnsTypes(result,numCols);
-    } else {
-      std::cerr << "Incorrect number of columns in table. Expected " EXPECTED_NUM_COLS_STR " but found " << numCols << '\n';
-    }
-
+    allOk = checkColumnsTypes(result,numCols) && checkColumnsNames(result);
   } else {
-    std::cerr << "Unexpected number of columns: " << numCols << '\n';
+    std::cerr << "Incorrect number of columns in table. Expected " EXPECTED_NUM_COLS_STR " but found " << numCols << '\n';
   }
 
   return allOk;
