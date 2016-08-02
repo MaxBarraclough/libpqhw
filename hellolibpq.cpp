@@ -3,7 +3,7 @@
 //
 // CREATE TABLE "my_table" (
   // "number" integer NOT NULL,
-  // "English" character varying(11) NOT NULL
+  // "english" character varying(11) NOT NULL
 // );
 
 
@@ -117,24 +117,82 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
 }
 
 
+// given that PQresultErrorMessage(1) exists, there's no real need for this
+#if 0
+static void printResultStatusError(const ExecStatusType es) {
+  BOOST_ASSERT_MSG( ( (PGRES_TUPLES_OK != es) && (PGRES_COMMAND_OK != es) ), "Cannot print an error message for a non-error outcome" );
+  const char * toPrint = NULL;
+  switch(es) {
+    case PGRES_EMPTY_QUERY:
+        toPrint = "The string sent to the server was empty.";
+      break;
+    case PGRES_COPY_OUT:
+        toPrint = "Copy Out (from server) data transfer started.";
+      break;
+    case PGRES_COPY_IN:
+        toPrint = "Copy In (to server) data transfer started.";
+      break;
+    case PGRES_BAD_RESPONSE:
+        toPrint = "The server's response was not understood.";
+      break;
+    case PGRES_NONFATAL_ERROR:
+      toPrint = "A nonfatal error (a notice or warning) occurred.";
+      break;
+    case PGRES_FATAL_ERROR:
+      toPrint = "A fatal error occurred.";
+      break;
+    case PGRES_COPY_BOTH:
+      toPrint = "Copy In/Out (to and from server) data transfer started. This feature is currently used only for streaming replication, so this status should not occur in ordinary applications.";
+      break;
+    case PGRES_SINGLE_TUPLE:
+      toPrint = "The PGresult contains a single result tuple from the current command. This status occurs only when single-row mode has been selected for the query.";
+      break;
+    default:
+      BOOST_ASSERT_MSG( (false) , "Invalid or unexpected error code" );
+  }
+  std::cout << toPrint;
+}
+#endif
+
+
 static void doStuffWithConnection(PGconn * const conn) {
-   BOOST_ASSERT( NULL != conn );
+  BOOST_ASSERT( NULL != conn );
 
-   PGresult * const result = PQexec(conn, "SELECT * FROM my_table;");
+  PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE false;");
 
-   if (NULL != result) {
-     const bool schemaIsOk = verifyTheSchema(conn, result);
+  if (NULL != result) {
 
-     if (schemaIsOk) {
-       std::cout << "All schema checks passed\n";
-     }
+    const ExecStatusType es = PQresultStatus(result);
 
-     PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
-                      // It calls 'free' for us, see https://git.io/vKpNI
-   } else {
-     std::cerr << "Error attempting SELECT query. Likely causes: failed network connection, server down, or out-of-memory\n";
-     // TODO PQerrorMessage for actual cause
-   }
+    if (PGRES_TUPLES_OK == es) {
+      const bool schemaIsOk = verifyTheSchema(conn, result);
+
+      if (schemaIsOk) {
+        std::cout << "All schema checks passed\n";
+      }
+
+      PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
+                       // It calls 'free' for us, see https://git.io/vKpNI
+    }
+    else { // then PGRES_TUPLES_OK != es
+      if ( PGRES_COMMAND_OK == es ) {
+        std::cerr << "Expected to run a command which returns column data";
+      } else { // we have a real error
+        // printResultStatusError
+        char * const errorMessage = PQresultErrorMessage(result);
+        BOOST_ASSERT(( NULL != errorMessage ));
+        std::cerr << "Error attempting query:\n";
+        std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
+        std::cerr << '\n' << errorMessage << '\n';
+        std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-');
+        std::cerr << "\n\n";
+      }
+    }
+
+
+  } else { // then result == NULL
+    std::cerr << "Error attempting SELECT query. Likely causes: failed network connection, server down, or out-of-memory\n";
+  }
 }
 
 
@@ -142,7 +200,7 @@ static void doStuffWithConnection(PGconn * const conn) {
 int main(int argc, const char *argv[]) {
 
   #ifdef _MSC_VER
-    UNTESTED UNTESTED UNTESTED 1111() // break the build
+    #error This code is untested on the Windows platform
     WSAStartup();
   #endif
 
@@ -183,10 +241,11 @@ int main(int argc, const char *argv[]) {
 
     case CONNECTION_BAD:
       std::cerr << "Unable to connect. Reason: \n";
-      std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
+      std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
       std::cerr << '\n';
       std::cerr << PQerrorMessage(conn);
-      std::fill_n(std::ostream_iterator<char>(std::cout), 30, '-');
+      std::cerr << '\n';
+      std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-');
       std::cerr << "\n\n";
       break;
 
