@@ -237,7 +237,7 @@ int main(int argc, const char *argv[]) {
                                     NULL };
 
 
-// BOOST_STATIC_ASSERT(( sizeof keywords == sizeof values )); // Postgres won't do the equivalent runtime check
+  BOOST_STATIC_ASSERT(( sizeof keywords == sizeof values )); // Postgres won't do the equivalent runtime check
 
   PGconn * const conn = PQconnectdbParams(keywords,values,0);
 
