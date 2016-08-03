@@ -60,9 +60,9 @@ static const int expectedTypes[] = { /*first col*/ INT4OID, /*second col*/ VARCH
 #define EXPECTED_NUM_COLS 2
 #define EXPECTED_NUM_COLS_STR STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) // string literal like "2" (including quotes)
 // This allows us to do:
-  // "string literal here " EXPECTED_NUM_COLS_STR " another string literal"
+inline static void toy1() {std::cout << "string literal here "    EXPECTED_NUM_COLS_STR " another string literal";}
 // and it's equivalent to
-  // "string literal here " << EXPECTED_NUM_COLS << " another string literal"
+inline static void toy2() {std::cout << "string literal here " << EXPECTED_NUM_COLS <<  " another string literal";}
 BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == COUNT_OF(expectedTypes) ));
 
 
