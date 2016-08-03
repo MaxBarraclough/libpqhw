@@ -279,5 +279,7 @@ int main(int argc, const char *argv[]) {
   #endif
 
   std::cout << "Terminating\n";
+
+  return 0;
 }
 
