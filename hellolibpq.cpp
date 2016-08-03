@@ -141,44 +141,6 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
 }
 
 
-// given that PQresultErrorMessage(1) exists, there's no real need for this
-#if 0
-static void printResultStatusError(const ExecStatusType es) {
-  BOOST_ASSERT_MSG( ( (PGRES_TUPLES_OK != es) && (PGRES_COMMAND_OK != es) ), "Cannot print an error message for a non-error outcome" );
-  const char * toPrint = NULL;
-  switch(es) {
-    case PGRES_EMPTY_QUERY:
-      toPrint = "The string sent to the server was empty.";
-      break;
-    case PGRES_COPY_OUT:
-      toPrint = "Copy Out (from server) data transfer started.";
-      break;
-    case PGRES_COPY_IN:
-      toPrint = "Copy In (to server) data transfer started.";
-      break;
-    case PGRES_BAD_RESPONSE:
-      toPrint = "The server's response was not understood.";
-      break;
-    case PGRES_NONFATAL_ERROR:
-      toPrint = "A nonfatal error (a notice or warning) occurred.";
-      break;
-    case PGRES_FATAL_ERROR:
-      toPrint = "A fatal error occurred.";
-      break;
-    case PGRES_COPY_BOTH:
-      toPrint = "Copy In/Out (to and from server) data transfer started. This feature is currently used only for streaming replication, so this status should not occur in ordinary applications.";
-      break;
-    case PGRES_SINGLE_TUPLE:
-      toPrint = "The PGresult contains a single result tuple from the current command. This status occurs only when single-row mode has been selected for the query.";
-      break;
-    default:
-      BOOST_ASSERT_MSG( (false), "Invalid or unexpected error code" );
-  }
-  std::cout << toPrint;
-}
-#endif
-
-
 static void doStuffWithConnection(PGconn * const conn) {
 
   struct H { // just for the helper function
