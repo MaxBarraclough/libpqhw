@@ -32,7 +32,8 @@
 
 // Handling endianness: in https://www.postgresql.org/docs/current/static/libpq-example.html
 // we see netinet/in.h and arpa/inet.h but this doesn't let us work with signed types,
-// and I can't see a way forward without breaking the strict aliasing rule (nasty).
+// and I can't see a way forward without breaking the strict aliasing rule.
+// See also http://dbp-consulting.com/tutorials/StrictAliasing.html
 // #include <boost/endian/conversion.hpp> // requires Boost 1.58, which I lack,
 // so we just use GCC intrinsics for now: no #include necessary
 
