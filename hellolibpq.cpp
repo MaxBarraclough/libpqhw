@@ -66,7 +66,6 @@ BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == EXPECTED_NUM_COLS_VAL ));
 // returns true if checks passed, false if they failed
 // We check the types of columns 0 and 1.
 static bool checkColumnsTypes(PGresult * const result, int numCols) {
-
   BOOST_ASSERT_MSG( (EXPECTED_NUM_COLS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
 
   bool typesAreCorrect = true; // leave as true until we find a bad type
@@ -89,6 +88,7 @@ static bool checkColumnsTypes(PGresult * const result, int numCols) {
 // unlike checkColumnsTypes(2), this is fully hard-coded to our schema.
 // TODO FIX THAT by adding more globals arrays or maybe something nicer
 static bool checkColumnsNames(PGresult * const result) {
+  BOOST_ASSERT( NULL != result );
 
   char * const colName1 = PQfname(result, 0);
   BOOST_ASSERT_MSG( (NULL != colName1), "Unexpected too few columns: this should have been handled earlier" );
@@ -115,7 +115,6 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
   BOOST_ASSERT( NULL != result );
 
   const int numCols = PQnfields(result);
-
   bool allOk = false;
 
   if ( EXPECTED_NUM_COLS == numCols ) {
@@ -167,13 +166,8 @@ static void printResultStatusError(const ExecStatusType es) {
 #endif
 
 
-static void doStuffWithConnection(PGconn * const conn) {
-  BOOST_ASSERT( NULL != conn );
 
-  PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE false;");
-
-  if (NULL != result) {
-
+inline static void doStuffWithConnection_proper(PGconn * const conn, PGresult * const result) {
     const ExecStatusType es = PQresultStatus(result);
 
     if (PGRES_TUPLES_OK == es) {
@@ -181,12 +175,11 @@ static void doStuffWithConnection(PGconn * const conn) {
 
       if (schemaIsOk) {
         std::cout << "All schema checks passed\n";
-      }
+      } // else rely on specific checks to print messages
 
       PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
                        // It calls 'free' for us, see https://git.io/vKpNI
-    }
-    else { // then PGRES_TUPLES_OK != es
+    } else { // then PGRES_TUPLES_OK != es
       if ( PGRES_COMMAND_OK == es ) {
         std::cerr << "Expected to run a command which returns column data";
       } else { // we have a real error
@@ -200,9 +193,16 @@ static void doStuffWithConnection(PGconn * const conn) {
         std::cerr << "\n\n";
       }
     }
+}
 
+static void doStuffWithConnection(PGconn * const conn) {
+  BOOST_ASSERT( NULL != conn );
 
-  } else { // then result == NULL
+  PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE false;");
+
+  if (NULL != result) {
+    doStuffWithConnection_proper(conn,result);
+  } else {
     std::cerr << "Error attempting SELECT query. Likely causes: failed network connection, server down, or out-of-memory\n";
   }
 }
