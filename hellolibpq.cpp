@@ -1,3 +1,7 @@
+//////////////////////////////////////////////////////////////
+////////////////////////// PROLOGUE //////////////////////////
+//////////////////////////////////////////////////////////////
+
 // We expect to user username "testuser", password "testuser", database "my_database",
 // table "my_table" which should look like:
 //
@@ -5,7 +9,6 @@
   // "number" integer NOT NULL,
   // "english" character varying(11) NOT NULL
 // );
-
 
 // required reading: https://www.postgresql.org/docs/current/static/libpq-exec.html and adjacent
 // see also
@@ -15,7 +18,6 @@
 
 ////////////////////////// Ugly #include trouble workaround //////////////////////////
 //#include <9.3/server/catalog/pg_type.h> // trouble with indirectly included headers, possibly due to CMake
-
 
 // Assuming copy-pasta is fragile and true values are liable to change between Postgre versions, let's be defensive:
 #include <pg_config.h>
@@ -30,26 +32,24 @@
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 
-#include <cstdlib>   // pedantic: strictly, this is needed for NULL
 #include <iostream>
 #include <iterator>  // for std::ostream_iterator
 
 #include <string.h>  // for strcmp
+#include <cstdlib>   // pedantic: strictly, this is needed for NULL
 
 // From Chromium via https://stackoverflow.com/a/4415646
 #define COUNT_OF(x) ( (sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))) )
-
 
 // TODO add link to GNU website that provides these (except they use unhelpful names)
 #define STRINGIFY_WITH_EXPANSION(S) STRINGIFY_NO_EXPANSION(S)
 #define STRINGIFY_NO_EXPANSION(S) #S
 
-// print many dashes http://stackoverflow.com/a/11421689/2307853
-inline static void printHorizontalBar(std::ostream &os) {
-  std::fill_n(std::ostream_iterator<char>(os), 30, '-');
-}
 
 
+////////////////////////////////////////////////////////////////////////
+////////////////////////// GLOBALS AND MACROS //////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 // INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
 // VARCHAROID => our table uses "character varying(11)"
@@ -59,11 +59,21 @@ static const int expectedTypes[] = { /*first col*/ INT4OID, /*second col*/ VARCH
 #define EXPECTED_NUM_COLS 2
 #define EXPECTED_NUM_COLS_STR STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) // string literal like "2" (including quotes)
 // This allows us to do:
-inline static void toy1() {std::cout << "string literal here "    EXPECTED_NUM_COLS_STR " another string literal";}
+inline static void toy1() {std::cout << "Number of columns: "    EXPECTED_NUM_COLS_STR "\n";}
 // and it's equivalent to
-inline static void toy2() {std::cout << "string literal here " << EXPECTED_NUM_COLS <<  " another string literal";}
+inline static void toy2() {std::cout << "Number of columns: " << EXPECTED_NUM_COLS <<  "\n";}
 BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == COUNT_OF(expectedTypes) ));
 
+
+
+///////////////////////////////////////////////////////////////
+////////////////////////// FUNCTIONS //////////////////////////
+///////////////////////////////////////////////////////////////
+
+// print many dashes http://stackoverflow.com/a/11421689/2307853
+inline static void printHorizontalBar(std::ostream &os) {
+  std::fill_n(std::ostream_iterator<char>(os), 30, '-');
+}
 
 // returns true if checks passed, false if they failed
 // We check the types of columns 0 and 1.
@@ -167,8 +177,6 @@ static void printResultStatusError(const ExecStatusType es) {
   std::cout << toPrint;
 }
 #endif
-
-
 
 
 static void doStuffWithConnection(PGconn * const conn) {
