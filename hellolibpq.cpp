@@ -54,18 +54,16 @@ void printHorizontalBar(std::ostream &os) {
 
 // INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
 // VARCHAROID => our table uses "character varying(11)"
-static const int expectedTypes[] = { /*col. 0*/ INT4OID, /*col. 1*/ VARCHAROID };
-#define EXPECTED_NUM_COLS_VAL COUNT_OF(expectedTypes) // STRINGIFY_WITH_EXPANSION will give code, not a string of the number
-#define EXPECTED_NUM_COLS 2 // this way it plays nice with STRINGIFY_WITH_EXPANSION
-// so that in iostreams
+static const int expectedTypes[] = { /*first col*/ INT4OID, /*second col*/ VARCHAROID };
+
+// May have to update this manually if we change things:
+#define EXPECTED_NUM_COLS 2
+#define EXPECTED_NUM_COLS_STR STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) // string literal like "2" (including quotes)
+// This allows us to do:
+  // "string literal here " EXPECTED_NUM_COLS_STR " another string literal"
+// and it's equivalent to
   // "string literal here " << EXPECTED_NUM_COLS << " another string literal"
-// is equivalent to
-  // "string literal here " STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) " another string literal"
-
-#define EXPECTED_NUM_COLS_STR STRINGIFY_WITH_EXPANSION(EXPECTED_NUM_COLS) // string literal, something like "2" (including the quotes)
-
-BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == EXPECTED_NUM_COLS_VAL ));
-
+BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == COUNT_OF(expectedTypes) ));
 
 
 // returns true if checks passed, false if they failed
@@ -177,6 +175,7 @@ static void doStuffWithConnection(PGconn * const conn) {
 
   struct H { // just for the helper function
     inline static void helper(PGconn * const conn, PGresult * const result) {
+
       const ExecStatusType es = PQresultStatus(result);
 
       if (PGRES_TUPLES_OK == es) {
@@ -190,9 +189,8 @@ static void doStuffWithConnection(PGconn * const conn) {
                          // It calls 'free' for us, see https://git.io/vKpNI
       } else { // then PGRES_TUPLES_OK != es
         if ( PGRES_COMMAND_OK == es ) {
-          std::cerr << "Expected to run a command which returns column data";
+          std::cerr << "Expected to run a command which returns column data\n";
         } else { // we have a real error
-          // printResultStatusError
           char * const errorMessage = PQresultErrorMessage(result);
           BOOST_ASSERT(( NULL != errorMessage ));
           std::cerr << "Error attempting query:\n";
