@@ -68,7 +68,7 @@ BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == COUNT_OF(expectedTypes) ));
 
 // returns true if checks passed, false if they failed
 // We check the types of columns 0 and 1.
-static bool checkColumnsTypes(PGresult * const result, int numCols) {
+static bool checkColumnsTypes(PGresult * const result, const int numCols) {
   BOOST_ASSERT_MSG( (EXPECTED_NUM_COLS == numCols), "Unexpected bad number of columns: this should have been handled earlier" );
 
   bool typesAreCorrect = true; // leave as true until we find a bad type
