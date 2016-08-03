@@ -23,7 +23,6 @@
   #error Expected to build against exact version: PostgreSQL 9.3.13
 #endif
 
-
 #define INT4OID			23
 #define VARCHAROID		1043
 //////////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +86,7 @@ static bool checkColumnsTypes(PGresult * const result, const int numCols) {
 
   return typesAreCorrect;
 }
+
 
 // unlike checkColumnsTypes(2), this is fully hard-coded to our schema.
 // TODO FIX THAT by adding more globals arrays or maybe something nicer
@@ -216,7 +216,6 @@ static void doStuffWithConnection(PGconn * const conn) {
 }
 
 
-
 int main(int argc, const char *argv[]) {
 
   #ifdef _MSC_VER
@@ -254,7 +253,6 @@ int main(int argc, const char *argv[]) {
   const ConnStatusType status = PQstatus(conn);
 
   switch(status) {
-
     case CONNECTION_OK:
       doStuffWithConnection(conn);
       break;
@@ -272,7 +270,6 @@ int main(int argc, const char *argv[]) {
     default:
       BOOST_ASSERT_MSG( false, "Invalid connection status" );
       break;
-
   }
 
   PQfinish(conn);
@@ -282,6 +279,5 @@ int main(int argc, const char *argv[]) {
   #endif
 
   std::cout << "Terminating\n";
-
 }
 
