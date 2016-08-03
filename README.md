@@ -6,7 +6,7 @@ About
 
 A simple example program using Postgres's libpq library (Postgres client library in C).
 
-It performs a simple SELECT query, and does some checks on the schema of the returned data.
+It performs a simple SELECT query, does some checks on the schema of the returned table, and prints out that returned table.
 
 It uses a hard-coded placeholder authentication configuration:
 -  username: "testuser"
