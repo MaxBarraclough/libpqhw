@@ -167,41 +167,46 @@ static void printResultStatusError(const ExecStatusType es) {
 
 
 
-inline static void doStuffWithConnection_proper(PGconn * const conn, PGresult * const result) {
-    const ExecStatusType es = PQresultStatus(result);
-
-    if (PGRES_TUPLES_OK == es) {
-      const bool schemaIsOk = verifyTheSchema(conn, result);
-
-      if (schemaIsOk) {
-        std::cout << "All schema checks passed\n";
-      } // else rely on specific checks to print messages
-
-      PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
-                       // It calls 'free' for us, see https://git.io/vKpNI
-    } else { // then PGRES_TUPLES_OK != es
-      if ( PGRES_COMMAND_OK == es ) {
-        std::cerr << "Expected to run a command which returns column data";
-      } else { // we have a real error
-        // printResultStatusError
-        char * const errorMessage = PQresultErrorMessage(result);
-        BOOST_ASSERT(( NULL != errorMessage ));
-        std::cerr << "Error attempting query:\n";
-        std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
-        std::cerr << '\n' << errorMessage << '\n';
-        std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-');
-        std::cerr << "\n\n";
-      }
-    }
-}
 
 static void doStuffWithConnection(PGconn * const conn) {
+
+  struct H { // just for the helper function
+    inline static void helper(PGconn * const conn, PGresult * const result) {
+      const ExecStatusType es = PQresultStatus(result);
+
+      if (PGRES_TUPLES_OK == es) {
+        const bool schemaIsOk = verifyTheSchema(conn, result);
+
+        if (schemaIsOk) {
+          std::cout << "All schema checks passed\n";
+        } // else rely on specific checks to print messages
+
+        PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
+                         // It calls 'free' for us, see https://git.io/vKpNI
+      } else { // then PGRES_TUPLES_OK != es
+        if ( PGRES_COMMAND_OK == es ) {
+          std::cerr << "Expected to run a command which returns column data";
+        } else { // we have a real error
+          // printResultStatusError
+          char * const errorMessage = PQresultErrorMessage(result);
+          BOOST_ASSERT(( NULL != errorMessage ));
+          std::cerr << "Error attempting query:\n";
+          std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
+          std::cerr << '\n' << errorMessage << '\n';
+          std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-');
+          std::cerr << "\n\n";
+        }
+      }
+    }
+  };
+
+
   BOOST_ASSERT( NULL != conn );
 
   PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE false;");
 
   if (NULL != result) {
-    doStuffWithConnection_proper(conn,result);
+    H::helper(conn,result);
   } else {
     std::cerr << "Error attempting SELECT query. Likely causes: failed network connection, server down, or out-of-memory\n";
   }
