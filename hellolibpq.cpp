@@ -130,7 +130,7 @@ static bool checkColumnsNames(PGresult * const result) {
 
   if (bothColumnsNamesCorrect) {
     std::cout << "Column names are correct\n";
-  }
+  } // else rely on specific checks to print messages
 
   return bothColumnsNamesCorrect;
 }
