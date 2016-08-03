@@ -38,6 +38,12 @@
 #include <string.h>  // for strcmp
 #include <cstdlib>   // pedantic: strictly, this is needed for NULL
 
+
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////// GLOBALS AND MACROS //////////////////////////
+////////////////////////////////////////////////////////////////////////
+
 // From Chromium via https://stackoverflow.com/a/4415646
 #define COUNT_OF(x) ( (sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))) )
 
@@ -45,13 +51,7 @@
 #define STRINGIFY_WITH_EXPANSION(S) STRINGIFY_NO_EXPANSION(S)
 #define STRINGIFY_NO_EXPANSION(S) #S
 
-
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////// GLOBALS AND MACROS //////////////////////////
-////////////////////////////////////////////////////////////////////////
-
-// INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
+// INT4OID    => "integer" ("NOT NULL" is not reflected in type information proper; it's a constraint)
 // VARCHAROID => our table uses "character varying(11)"
 static const int expectedTypes[] = { /*first col*/ INT4OID, /*second col*/ VARCHAROID };
 
@@ -64,6 +64,9 @@ inline static void toy1() {std::cout << "Number of columns: "    EXPECTED_NUM_CO
 inline static void toy2() {std::cout << "Number of columns: " << EXPECTED_NUM_COLS <<  "\n";}
 BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == COUNT_OF(expectedTypes) ));
 
+const int NUMBER_COL_NUM  = 0;
+const int ENGLISH_COL_NUM = 1;
+
 
 
 ///////////////////////////////////////////////////////////////
@@ -74,6 +77,7 @@ BOOST_STATIC_ASSERT(( EXPECTED_NUM_COLS == COUNT_OF(expectedTypes) ));
 inline static void printHorizontalBar(std::ostream &os) {
   std::fill_n(std::ostream_iterator<char>(os), 30, '-');
 }
+
 
 // returns true if checks passed, false if they failed
 // We check the types of columns 0 and 1.
@@ -141,6 +145,20 @@ static bool verifyTheSchema(PGconn * const conn, PGresult * const result) {
 }
 
 
+static void processReturnedTable(PGresult * const result) {
+
+  const int numRows = PQntuples(result);
+
+  BOOST_ASSERT((2 == numRows)); // TODO MOVE THIS CHECK ELSEWHERE, IT SHOULD NOT BE AN ASSERT
+
+  for (int rowNum = 0; rowNum != numRows; ++rowNum) {
+    char * const number  = PQgetvalue(result,rowNum,NUMBER_COL_NUM);
+    char * const english = PQgetvalue(result,rowNum,ENGLISH_COL_NUM);
+    std::cout << number << " -> " << english << '\n';
+  }
+}
+
+
 static void doStuffWithConnection(PGconn * const conn) {
 
   struct H { // just for the helper function
@@ -153,6 +171,7 @@ static void doStuffWithConnection(PGconn * const conn) {
 
         if (schemaIsOk) {
           std::cout << "All schema checks passed\n";
+          processReturnedTable(result);
         } // else rely on specific checks to print messages
 
         PQclear(result); // Despite name, is *not* just a memset-style 'clear'.
@@ -176,7 +195,8 @@ static void doStuffWithConnection(PGconn * const conn) {
 
   BOOST_ASSERT( NULL != conn );
 
-  PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE false;");
+  PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE ((number = 1) or (english='Twenty'));");
+//PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE ((number = 1) or (lower(english)='two'));");
 
   if (NULL != result) {
     H::helper(conn,result);
