@@ -45,6 +45,11 @@
 #define STRINGIFY_WITH_EXPANSION(S) STRINGIFY_NO_EXPANSION(S)
 #define STRINGIFY_NO_EXPANSION(S) #S
 
+// print many dashes http://stackoverflow.com/a/11421689/2307853
+void printHorizontalBar(std::ostream &os) {
+  std::fill_n(std::ostream_iterator<char>(os), 30, '-');
+}
+
 
 
 // INT4OID => "integer" ("NOT NULL" is not reflected in type information proper, as it's a constraint)
@@ -191,9 +196,9 @@ static void doStuffWithConnection(PGconn * const conn) {
           char * const errorMessage = PQresultErrorMessage(result);
           BOOST_ASSERT(( NULL != errorMessage ));
           std::cerr << "Error attempting query:\n";
-          std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
+          printHorizontalBar(std::cerr);
           std::cerr << '\n' << errorMessage << '\n';
-          std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-');
+          printHorizontalBar(std::cerr);
           std::cerr << "\n\n";
         }
       }
@@ -258,11 +263,11 @@ int main(int argc, const char *argv[]) {
 
     case CONNECTION_BAD:
       std::cerr << "Unable to connect. Reason: \n";
-      std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-'); // print many dashes http://stackoverflow.com/a/11421689/2307853
+      printHorizontalBar(std::cerr);
       std::cerr << '\n';
       std::cerr << PQerrorMessage(conn);
       std::cerr << '\n';
-      std::fill_n(std::ostream_iterator<char>(std::cerr), 30, '-');
+      printHorizontalBar(std::cerr);
       std::cerr << "\n\n";
       break;
 
