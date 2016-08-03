@@ -136,16 +136,16 @@ static void printResultStatusError(const ExecStatusType es) {
   const char * toPrint = NULL;
   switch(es) {
     case PGRES_EMPTY_QUERY:
-        toPrint = "The string sent to the server was empty.";
+      toPrint = "The string sent to the server was empty.";
       break;
     case PGRES_COPY_OUT:
-        toPrint = "Copy Out (from server) data transfer started.";
+      toPrint = "Copy Out (from server) data transfer started.";
       break;
     case PGRES_COPY_IN:
-        toPrint = "Copy In (to server) data transfer started.";
+      toPrint = "Copy In (to server) data transfer started.";
       break;
     case PGRES_BAD_RESPONSE:
-        toPrint = "The server's response was not understood.";
+      toPrint = "The server's response was not understood.";
       break;
     case PGRES_NONFATAL_ERROR:
       toPrint = "A nonfatal error (a notice or warning) occurred.";
@@ -160,7 +160,7 @@ static void printResultStatusError(const ExecStatusType es) {
       toPrint = "The PGresult contains a single result tuple from the current command. This status occurs only when single-row mode has been selected for the query.";
       break;
     default:
-      BOOST_ASSERT_MSG( (false) , "Invalid or unexpected error code" );
+      BOOST_ASSERT_MSG( (false), "Invalid or unexpected error code" );
   }
   std::cout << toPrint;
 }
