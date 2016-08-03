@@ -46,7 +46,7 @@
 #define STRINGIFY_NO_EXPANSION(S) #S
 
 // print many dashes http://stackoverflow.com/a/11421689/2307853
-void printHorizontalBar(std::ostream &os) {
+inline static void printHorizontalBar(std::ostream &os) {
   std::fill_n(std::ostream_iterator<char>(os), 30, '-');
 }
 
