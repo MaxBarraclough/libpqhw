@@ -14,9 +14,10 @@
 // see also
 // https://books.google.co.uk/books?id=gkQVL9pyFVYC&lpg=PA324&ots=E7xhWQIujW&dq=PQntuples&pg=PA324#v=onepage&q=PQntuples&f=false
 
-#include <libpq-fe.h>
 
-////////////////////////// Ugly #include trouble workaround //////////////////////////
+#include <libpq-fe.h> // Postgres's "libpq" client library
+
+/************************* Ugly #include trouble workaround *************************/
 //#include <9.3/server/catalog/pg_type.h> // trouble with indirectly included headers, possibly due to CMake
 
 // Assuming copy-pasta is fragile and true values are liable to change between Postgre versions, let's be defensive:
@@ -27,8 +28,15 @@
 
 #define INT4OID			23
 #define VARCHAROID		1043
-//////////////////////////////////////////////////////////////////////////////////////
+/************************************************************************************/
 
+// Handling endianness: in https://www.postgresql.org/docs/current/static/libpq-example.html
+// we see netinet/in.h and arpa/inet.h but this doesn't let us work with signed types,
+// and I can't see a way forward without breaking the strict aliasing rule (nasty).
+// #include <boost/endian/conversion.hpp> // requires Boost 1.58, which I lack,
+// so we just use GCC intrinsics for now: no #include necessary
+
+#include <boost/type_traits/is_same.hpp>
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 
@@ -37,6 +45,8 @@
 
 #include <string.h>  // for strcmp
 #include <cstdlib>   // pedantic: strictly, this is needed for NULL
+// Leave this one out and just hope int32_t exists anyway (which it will in GCC)
+// #include <cstdint>   // for int32_t etc
 
 
 
@@ -149,11 +159,15 @@ static void processReturnedTable(PGresult * const result) {
 
   const int numRows = PQntuples(result);
 
-  BOOST_ASSERT((2 == numRows)); // TODO MOVE THIS CHECK ELSEWHERE, IT SHOULD NOT BE AN ASSERT
-
   for (int rowNum = 0; rowNum != numRows; ++rowNum) {
-    char * const number  = PQgetvalue(result,rowNum,NUMBER_COL_NUM);
-    char * const english = PQgetvalue(result,rowNum,ENGLISH_COL_NUM);
+
+    char * const number_bs = PQgetvalue(result,rowNum,NUMBER_COL_NUM); // binary 'string', in network endianness
+    int number = *( (int*)number_bs ); // still in network endianness
+    BOOST_STATIC_ASSERT_MSG(( boost::is_same<int32_t,int>::value ), "We depend on int being 32-bit");
+    number = __builtin_bswap32(number);        // now in host endianness, ready to use as an int
+    // boost::big_to_native_inplace( number ); // now in host endianness, ready to use as an int
+
+    char * const english = PQgetvalue(result,rowNum,ENGLISH_COL_NUM); // don't care about text/binary format: both '\0' terminated
     std::cout << number << " -> " << english << '\n';
   }
 }
@@ -192,11 +206,20 @@ static void doStuffWithConnection(PGconn * const conn) {
     }
   };
 
-
   BOOST_ASSERT( NULL != conn );
 
-  PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE ((number = 1) or (english='Twenty'));");
+//PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE ((number = 1) or (english='Twenty'));");
 //PGresult * const result = PQexec(conn, "SELECT * FROM my_table WHERE ((number = 1) or (lower(english)='two'));");
+
+  PGresult * const result =
+    PQexecParams(conn,
+                "SELECT * FROM my_table WHERE ((number = 1) or (english='Twenty'));",
+                0,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                1); // request binary format outputs
 
   if (NULL != result) {
     H::helper(conn,result);
